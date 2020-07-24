@@ -127,7 +127,19 @@ function! neocomplete#handler#_do_auto_complete(event) abort "{{{
     return
   endif
 
-  if g:neocomplete#auto_complete_delay > 0 && has('timers')
+  let delay = g:neocomplete#auto_complete_delay 
+  let settings = get(g:, 'neocomplete#auto_complete_delay_settings', {})
+  if !empty(settings)
+    let types = neocomplete#context_filetype#filetypes()
+    for type in types
+      let v = get(settings, type, delay)
+      if v > delay
+        let delay = v
+      endif
+    endfor
+  endif
+
+  if delay > 0 && has('timers')
         \ && (!has('gui_macvim') || has('patch-8.0.95'))
     if exists('s:timer')
       call timer_stop(s:timer.id)
@@ -135,7 +147,7 @@ function! neocomplete#handler#_do_auto_complete(event) abort "{{{
     if a:event !=# 'Manual'
       let s:timer = { 'event': a:event }
       let s:timer.id = timer_start(
-            \ g:neocomplete#auto_complete_delay,
+            \ delay,
             \ function('s:complete_delay'))
       return
     endif
